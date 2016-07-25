@@ -14,8 +14,8 @@ queryParameters.fields = fields;
 var options            = {};
 options.uri            = `${urlPath}?${queryString.stringify(queryParameters)}`;
 options.auth           = {};
-options.auth.user      = 'tmikos';
-options.auth.password  = '5StokrotkA23';
+options.auth.user      = '*****';
+options.auth.password  = '**********';
 
 request(options).then(function(resBodyInJson){
 	var response = JSON.parse(resBodyInJson);
@@ -23,7 +23,7 @@ request(options).then(function(resBodyInJson){
 	var mapped = issues.map(x => {
 		return {
 			key:         x.key,
-			bmoId:       x.fields.summary.trim().substr(0,3),
+			externalId:  x.fields.summary.trim().substr(0,3),
 			title:       x.fields.summary.trim().substring(4),
 			status:      x.fields.status.name,
 			fixVersions: x.fields.fixVersions.map(v => v.name).join(','),
