@@ -6,7 +6,7 @@ var request = require('request-promise'),
 
 const urlPath = 'https://track.infusion.com/rest/api/2/search/'
 const filter = 'project="Branch Operational Procedures" AND issuetype=Bug AND (fixVersion not in versionMatch("BMO.*") OR fixVersion is EMPTY) ORDER BY summary ASC'
-const fields = 'summary,fixVersions,aggregatetimespent,created,labels,status';
+const fields = 'summary,fixVersions,aggregatetimespent,created,labels,status,comment';
 
 var schema = {
 	properties: {
@@ -19,9 +19,41 @@ var schema = {
 		}
 	}
 };
-//schema.properties.password.hidden = true;
-prompt.start();
-prompt.get(schema, function (err, result) {
+
+function extractRootCause(commentField) {
+	const matchRootCause = /\*Cause\*([\s\S]*)\*Solution\*/;
+	return match(commentField, matchRootCause);
+}
+
+function match(commentField, regex) {
+	var allResolutionComments = commentField.comments.filter(c => c.body.startsWith("*Cause*")).map(k => k.body);
+	if (allResolutionComments.length < 1) return;
+	var resolutionComment = allResolutionComments[0]; 
+	const expectedMatchIndex = 1;
+	const expectedNumberOfMatches = 2;
+	var matches = resolutionComment.match(regex);
+	
+	if (matches === null || matches.length != expectedNumberOfMatches) return;  
+	return matches[expectedMatchIndex].trim();
+}
+
+function extractSolution(commentField) {
+	const matchSolution = /\*Solution\*([\s\S]*)/;
+	return match(commentField, matchSolution);
+}
+
+// prompt.start();
+// prompt.get(schema, function (err, result) {
+// 	if (err) {
+// 		console.log(err);
+// 		return;
+// 	}
+// 	run(result);
+// });
+
+run({name: 'tmikos', password: '5StokrotkA23'});
+
+function run(result) {
 	var queryParameters = {};
 	queryParameters.jql = filter;
 	queryParameters.fields = fields;
@@ -34,7 +66,8 @@ prompt.get(schema, function (err, result) {
 	options.auth.user = result.name;
 	options.auth.password = result.password;
 
-	request(options).then(function (resBodyInJson) {
+	request(options)
+	.then(function (resBodyInJson) {
 		var response = JSON.parse(resBodyInJson);
 		var issues = response.issues;
 		var mapped = issues.map(x => {
@@ -46,19 +79,23 @@ prompt.get(schema, function (err, result) {
 				fixVersions: x.fields.fixVersions.map(v => v.name).join(','),
 				timespent: x.fields.aggregatetimespent,
 				created: x.fields.created,
-				labels: x.fields.labels.join(',')
+				labels: x.fields.labels.join(','),
+				rootCause: extractRootCause(x.fields.comment),
+				solution: extractSolution(x.fields.comment)
 			}
 		});
 		var csv = papa.unparse(mapped);
-
 		console.log(csv);
 		fs.writeFile('bugs.csv', csv, (err) => {
 			if (err) throw err;
 			console.log('Bugs saved to bugs.csv file.');
 		});
-	}).catch(function (err) {
-		console.log(err);
+	})
+	.catch(function (err) {
+		for (var prop in err) {
+			console.log(`err.${prop}: ${err[prop]}`);
+		}
 	});
-});
+}
 
 
