@@ -5,7 +5,9 @@ var request = require('request-promise'),
 	prompt = require('prompt');
 
 const urlPath = 'https://track.infusion.com/rest/api/2/search/'
-const filter = 'project="Branch Operational Procedures" AND issuetype=Bug AND (fixVersion not in versionMatch("BMO.*") OR fixVersion is EMPTY) ORDER BY summary ASC'
+const filter = 'project="Branch Operational Procedures" AND issuetype=Bug \
+	AND (fixVersion not in versionMatch("BMO.*") OR fixVersion is EMPTY) \
+	AND (labels is EMPTY OR labels not in (Reopen)) ORDER BY summary ASC'
 const fields = 'summary,fixVersions,aggregatetimespent,created,labels,status,comment';
 
 var schema = {
