@@ -53,12 +53,13 @@ function extractSolution(commentField) {
 // 	run(result);
 // });
 
-run({name: 'tmikos', password: '5StokrotkA23'});
+run({name: 'tmikos', password: '6StokrotkA23'});
 
 function run(result) {
 	var queryParameters = {};
 	queryParameters.jql = filter;
 	queryParameters.fields = fields;
+	queryParameters.maxResults = 100;
 
 	var options = {};
 	options.uri = `${urlPath}?${queryString.stringify(queryParameters)}`;
